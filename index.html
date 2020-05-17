@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8" />
+
+        <title>HackerMatch</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <link
+            rel="stylesheet"
+            href="css/materialize.css"
+            media="screen,projection"
+        />
+        <link rel="stylesheet" href="css/style.css" />
+        <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons"
+            rel="stylesheet"
+        />
+    </head>
+
+    <body>
+        <ul id="tabs-swipe-demo" class="tabs">
+            <li class="tab col l4">
+                <a href="#account">Account</a>
+            </li>
+            <li class="tab col l4 restricted_tab">
+                <a href="#matching">Matching</a>
+            </li>
+            <li class="tab col l4 restricted_tab">
+                <a href="#matches">Matches</a>
+            </li>
+        </ul>
+
+        <div id="account" class="container">
+            <div id="login" class="section" style="display: none;">
+                <h1 class="header center">Login to Account<br /></h1>
+                <div class="row center">
+                    <form class="col s12" id="login_form">
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input
+                                    id="login_email"
+                                    type="email"
+                                    class="validate"
+                                    required
+                                />
+                                <label for="login_email">Email</label>
+                                <span
+                                    class="helper-text"
+                                    data-error="Invalid email"
+                                    data-success=""
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input
+                                    id="login_password"
+                                    type="password"
+                                    class="validate"
+                                    required
+                                />
+                                <label for="login_password">Password</label>
+                            </div>
+                        </div>
+                        <button
+                            class="btn waves-effect waves-light"
+                            type="submit"
+                            name="action"
+                        >
+                            Login
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div id="profile" class="section">
+                <h1 class="header center" id="profile_title"></h1>
+                <br />
+                <div class="row center">
+                    <form class="col s12" id="profile_form">
+                        <div class="row">
+                            <div class="input-field col l12">
+                                <input
+                                    id="name"
+                                    type="text"
+                                    class="validate"
+                                    required
+                                />
+                                <label for="name">Name</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input
+                                    id="profile_email"
+                                    type="email"
+                                    class="validate"
+                                    required
+                                />
+                                <label for="profile_email">Email</label>
+                                <span
+                                    class="helper-text"
+                                    data-error="Invalid email"
+                                    data-success=""
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input
+                                    id="profile_password"
+                                    type="password"
+                                    class="validate"
+                                    required
+                                />
+                                <label for="profile_password">Password</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col l12">
+                                <input
+                                    id="age"
+                                    type="number"
+                                    class="validate"
+                                    required
+                                />
+                                <label for="age">Age</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col l12">
+                                <input
+                                    id="profile_description"
+                                    type="text"
+                                    class="validate"
+                                    required
+                                />
+                                <label for="profile_description"
+                                    >Description</label
+                                >
+                            </div>
+                        </div>
+                        <h4>Technologies</h4>
+                        <div class="row">
+                            <ul
+                                class="collection list-inline"
+                                id="technologies"
+                            >
+                                <li class="collection-item">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            class="filled-in"
+                                        />
+                                        <span>Python</span>
+                                    </label>
+                                </li>
+                                <li class="collection-item">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            class="filled-in"
+                                        />
+                                        <span>Node.js</span>
+                                    </label>
+                                </li>
+                                <li class="collection-item">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            class="filled-in"
+                                        />
+                                        <span>C++</span>
+                                    </label>
+                                </li>
+                                <li class="collection-item">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            class="filled-in"
+                                        />
+                                        <span>Java</span>
+                                    </label>
+                                </li>
+                                <li class="collection-item">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            class="filled-in"
+                                        />
+                                        <span>HTML</span>
+                                    </label>
+                                </li>
+                                <li class="collection-item">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            class="filled-in"
+                                        />
+                                        <span>Google Cloud</span>
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                        <h4>Keywords</h4>
+                        <div class="chips" id="keywords"></div>
+                        <h4>Contact Methods</h4>
+                        <div class="row center">
+                            <div class="col l3">
+                                <a
+                                    class="waves-effect waves-light btn dropdown-trigger"
+                                    href="#"
+                                    data-target="contact_dropdown"
+                                    id="select_contact"
+                                    >Select Contact Type</a
+                                >
+                                <ul
+                                    id="contact_dropdown"
+                                    class="dropdown-content"
+                                >
+                                    <li>
+                                        <a href="#!" class="contact_type"
+                                            >Email</a
+                                        >
+                                    </li>
+                                    <li>
+                                        <a href="#!" class="contact_type"
+                                            >Phone Number</a
+                                        >
+                                    </li>
+                                    <li>
+                                        <a href="#!" class="contact_type"
+                                            >Discord</a
+                                        >
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col l6">
+                                <input
+                                    id="contact_input"
+                                    type="text"
+                                    class="validate"
+                                />
+                            </div>
+                            <div class="col l3">
+                                <a
+                                    class="waves-effect waves-light btn"
+                                    id="add_contact"
+                                    ><i class="material-icons center">add</i></a
+                                >
+                            </div>
+                        </div>
+                        <div class="row center">
+                            <ul class="collection" id="contact_list">
+                                <!-- <li class="collection-item avatar">
+                                    <i class="material-icons circle">email</i>
+                                    <p>
+                                        business@business.com
+                                    </p>
+                                    <a href="#!" class="secondary-content"
+                                        ><i
+                                            class="material-icons delete_contact"
+                                            >delete</i
+                                        ></a
+                                    >
+                                </li>
+                                <li class="collection-item avatar">
+                                    <i class="material-icons circle">phone</i>
+                                    <p>
+                                        123-456-7890
+                                    </p>
+                                    <a href="#!" class="secondary-content"
+                                        ><i
+                                            class="material-icons delete_contact"
+                                            >delete</i
+                                        ></a
+                                    >
+                                </li>
+                                <li class="collection-item avatar">
+                                    <img
+                                        src="https://cdn0.iconfinder.com/data/icons/free-social-media-set/24/discord-512.png"
+                                        alt=""
+                                        class="circle"
+                                    />
+                                    <p>
+                                        person#12345
+                                    </p>
+                                    <a href="#!" class="secondary-content"
+                                        ><i
+                                            class="material-icons delete_contact"
+                                            >delete</i
+                                        ></a
+                                    >
+                                </li> -->
+                            </ul>
+                        </div>
+                        <button
+                            class="btn waves-effect waves-light"
+                            type="submit"
+                            name="action"
+                            id="profile_submit"
+                        >
+                            Register
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row center">
+                    <a id="logout" class="waves-effect waves-light btn"
+                        >Logout</a
+                    >
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Structure -->
+        <div id="popup" class="modal">
+            <div class="modal-content">
+                <h4>Error</h4>
+                <p id="modal_message"></p>
+            </div>
+            <div class="modal-footer">
+                <a
+                    href="#!"
+                    class="modal-close waves-effect waves-green btn-flat"
+                    >Ok</a
+                >
+            </div>
+        </div>
+
+        <div id="matching" class="section">
+            <div class="row">
+                <div class="col l12">
+                    <div class="card">
+                        <!-- <div class="card-image">
+                            <img
+                                src="https://p.bigstockphoto.com/GeFvQkBbSLaMdpKXF1Zv_bigstock-Aerial-View-Of-Blue-Lakes-And--227291596.jpg"
+                            />
+                        </div> -->
+                        <div class="card-content">
+                            <h4 id="match_name">
+                                Loading ...
+                            </h4>
+                            <p id="match_description"></p>
+                            <h5>
+                                Technologies
+                            </h5>
+                            <div id="match_technologies"></div>
+                        </div>
+                        <div class="card-action">
+                            <div class="row">
+                                <div class="col l6">
+                                    <a href="#" id="pass_button">PASS</a>
+                                </div>
+                                <div class="col l6">
+                                    <a href="#" id="match_button">MATCH</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="matches" class="section">
+            <div class="container" id="matches_list">
+                <!-- <div class="row">
+                    <div class="card horizontal">
+                        <div class="card-image">
+                            <img
+                                src="https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/close-up-of-tulips-blooming-in-field-royalty-free-image-1584131603.jpg"
+                            />
+                        </div>
+                        <div class="card-stacked">
+                            <div class="card-content">
+                                <h4>
+                                    Some One
+                                </h4>
+                                <div class="chip">
+                                    Python
+                                </div>
+                                <div class="chip">
+                                    Node.js
+                                </div>
+                                <div class="chip">
+                                    HTML
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <div class="row">
+                                    <div class="col l6">
+                                        <a href="#">Contact</a>
+                                    </div>
+                                    <div class="col l6">
+                                        <a href="#">Unmatch</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+        </div>
+
+        <div id="contact_modal" class="modal">
+            <div class="modal-content">
+                <h4>Contact Information</h4>
+                <ul class="collection" id="match_contact_list"></ul>
+            </div>
+        </div>
+
+        <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
+
+        <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+        <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-app.js"></script>
+
+        <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+        <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-analytics.js"></script>
+
+        <!-- Add Firebase products that you want to use -->
+        <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-auth.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-firestore.js"></script>
+
+        <script src="js/materialize.js"></script>
+        <script src="js/script.js"></script>
+    </body>
+</html>
