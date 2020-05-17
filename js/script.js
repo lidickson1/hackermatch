@@ -79,6 +79,7 @@ $(document).ready(function () {
                         )
                     );
                 }
+                loadDelete();
 
                 let keywords = [];
                 for (let i = 0; i < user_info.keywords.length; i++) {
@@ -291,7 +292,6 @@ async function get_matching() {
 }
 
 //add match's id to user's matches
-//TODO Check match
 $("#match_button").click(function () {
     let user_id = sessionStorage.getItem("user");
     db.collection("users")
@@ -475,13 +475,15 @@ $("#profile_form").submit(function () {
     return false; //prevent the page from reloading before promise is resolved
 });
 
-$(".delete_contact").click(function () {
-    let target = $(this).closest("li");
-    target.hide("slow", function () {
-        target.remove();
+function loadDelete() {
+    $(".delete_contact").click(function () {
+        let target = $(this).closest("li");
+        target.hide("slow", function () {
+            target.remove();
+        });
+        // $(this).closest("li").remove();
     });
-    // $(this).closest("li").remove();
-});
+}
 
 $(".contact_type").click(function () {
     $("#select_contact").text($(this).text());
@@ -535,6 +537,7 @@ $("#add_contact").click(function () {
     $("#contact_list").append(
         construct_contact(type, $("#contact_input").val(), true)
     );
+    loadDelete();
     $("#select_contact").text("Select Contact Type");
     $("#contact_input").val("");
 });
