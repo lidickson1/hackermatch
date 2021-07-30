@@ -166,9 +166,10 @@ $(document).ready(function () {
                         db.collection("users")
                             .doc(sessionStorage.getItem("user"))
                             .update({
-                                matches: firebase.firestore.FieldValue.arrayRemove(
-                                    matches[index].id
-                                ),
+                                matches:
+                                    firebase.firestore.FieldValue.arrayRemove(
+                                        matches[index].id
+                                    ),
                             })
                             .then(() => location.reload());
                     });
@@ -259,15 +260,19 @@ async function get_matching() {
         let intersection = user_info.keywords.filter((value) =>
             match.keywords.includes(value)
         );
-        //0 is none, 1 is all keywords were matched
-        let keywordScore =
-            (intersection.length * 2) /
-            parseFloat(user_info.keywords.length + match.keywords.length);
-        console.log("Keyword score: " + keywordScore);
-        if (keywordScore < 2 / 3.0) {
+        if (intersection.length < 2) {
             console.log("not enough keyword score");
             return true;
         }
+        // //0 is none, 1 is all keywords were matched
+        // let keywordScore =
+        //     (intersection.length * 2) /
+        //     parseFloat(user_info.keywords.length + match.keywords.length);
+        // console.log("Keyword score: " + keywordScore);
+        // if (keywordScore < 2 / 3.0) {
+        //     console.log("not enough keyword score");
+        //     return true;
+        // }
 
         //tech score
         let union = [
@@ -541,3 +546,8 @@ $("#add_contact").click(function () {
     $("#select_contact").text("Select Contact Type");
     $("#contact_input").val("");
 });
+
+//TODO move backend code to backend, use express (see canmypeteat for template)
+//TODO if you logout, the account details will remain in the register section
+//TODO show all profile details in matches tab as well
+//TODO ability to add pictures (multiple if possible)
