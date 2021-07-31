@@ -18,6 +18,7 @@
     },
     "homepage": "https://github.com/lidickson1/hackermatch#readme",
     "dependencies": {
-        "express": "^4.17.1"
+        "express": "^4.17.1",
+        "firebase": "^8.8.1"
     }
 }

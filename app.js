@@ -4,7 +4,24 @@ const app = express();
 // const MongoClient = require("mongodb").MongoClient;
 // const url =
 // "mongodb+srv://dickson:123@canmypeteat-he5mo.mongodb.net/test?retryWrites=true&w=majority";
-let db;
+const firebase = require("firebase");
+// import firebase from "firebase/app";
+// import "firebase/firestore";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBvcNp7bBLjKYYOlwpOkru99K2_876l4Ms",
+    authDomain: "hackermatch-5fb6b.firebaseapp.com",
+    databaseURL: "https://hackermatch-5fb6b.firebaseio.com",
+    projectId: "hackermatch-5fb6b",
+    storageBucket: "hackermatch-5fb6b.appspot.com",
+    messagingSenderId: "34253622534",
+    appId: "1:34253622534:web:c750f99b5c32ccce43e287",
+    measurementId: "G-RZNKLP745R",
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 app.use(express.json());
 
@@ -19,16 +36,6 @@ app.use(express.static(__dirname), function (req, res, next) {
     next();
 });
 
-app.post("/connect", function (request, response) {
-    connect()
-        .then(() => {
-            response.status(200).send("Connection successful!");
-        })
-        .catch((error) => {
-            response.status(401).send("Connection failed!");
-        });
-});
-
 app.post("/get", function (request, response) {
     getFoods(request.body)
         .then((list) => {
@@ -39,18 +46,48 @@ app.post("/get", function (request, response) {
         });
 });
 
+app.post("/test", function (request, response) {
+    response.status(200).send("success!");
+});
+
+app.post("/login", function (request, response) {
+    get_document(request.body.id).then((document) => {
+        if (document === undefined) {
+            response.status(401).send("Login failed!");
+        } else {
+            response.status(200).json(document);
+        }
+    });
+});
+
+//used when a user is informed of and acknowledged that they have received a new match
+app.post("/informed", function (request, response) {
+    get_document(request.body.id).then((document) => {
+        if (document === undefined) {
+            response.status(401).send("User not found");
+        } else if (!document.inform) {
+            response
+                .status(409)
+                .send("User was already informed and acknowledged");
+        } else {
+            get_document_reference(request.body.id).then((reference) =>
+                reference.update({
+                    inform: firebase.firestore.FieldValue.delete(),
+                })
+            );
+            response.status(200).send("Removed inform from user document");
+        }
+    });
+});
+
 app.listen(app.get("port"));
 
-async function connect() {
-    try {
-        let cluster = await MongoClient.connect(url, {
-            useUnifiedTopology: true,
-        });
-        db = cluster.db("database").collection("food");
-        return;
-    } catch (error) {
-        throw error;
-    }
+async function get_document_reference(id) {
+    return await db.collection("users").doc(id);
+}
+
+async function get_document(id) {
+    return (await (await get_document_reference(id)).get()).data();
 }
 
 async function getFoods(pet) {
