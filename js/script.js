@@ -2,6 +2,19 @@ let db;
 let user_info;
 let match_info;
 let matches = [];
+const url = "http://localhost:3000/";
+
+//this functions stringifies the json for us automatically
+//https://stackoverflow.com/a/39172380/15974102
+//if we use dataType: json, jQuery expects the response to be json as well
+//so if the response is plain text/string, jQuery will think it's an error, causing the error function to be run instead of the success one
+//thus, I chose to set the contentType instead
+$.ajaxPrefilter(function (options, originalOptions) {
+    if (options.contentType === "application/json") {
+        options.data = JSON.stringify(originalOptions.data || null);
+        // options.contentType = "application/json";
+    }
+});
 
 $(document).ready(function () {
     //front end initialization
@@ -47,11 +60,16 @@ $(document).ready(function () {
         $(".tabs").tabs("select", "profile");
 
         //get user info
-        db.collection("users")
-            .doc(sessionStorage.getItem("user"))
-            .get()
-            .then((doc) => {
-                user_info = doc.data();
+        $.ajax({
+            url: url + "info",
+            type: "POST",
+            contentType: "application/json",
+            // dataType: "json",
+            data: {
+                id: sessionStorage.getItem("user"),
+            },
+            success: function (data) {
+                user_info = data;
                 $("#name").val(user_info.name);
                 $("#profile_email").val(user_info.email);
                 $("#profile_password").val(user_info.password);
@@ -161,30 +179,57 @@ $(document).ready(function () {
                     });
 
                     $(".unmatch_button").click(function () {
-                        console.log("hehehe");
                         let index = $(this).attr("data-index");
-                        db.collection("users")
-                            .doc(sessionStorage.getItem("user"))
-                            .update({
-                                matches:
-                                    firebase.firestore.FieldValue.arrayRemove(
-                                        matches[index].id
-                                    ),
-                            })
-                            .then(() => location.reload());
+                        // console.log(matches[index]);
+                        $.ajax({
+                            url: url + "unmatch",
+                            type: "POST",
+                            contentType: "application/json",
+                            // dataType: "json",
+                            data: {
+                                id: sessionStorage.getItem("user"),
+                                match_id: matches[index].id,
+                            },
+                            // error: function (response) {
+                            //     console.log(response);
+                            //     //TODO
+                            //     // $("#modal_message").text("Account doesn't exist!");
+                            //     // $("#popup").modal("open");
+                            // },
+                            success: function (data) {
+                                location.reload();
+                            },
+                        });
                     });
                 });
 
                 //check new matches
                 if (user_info.inform) {
-                    db.collection("users")
-                        .doc(sessionStorage.getItem("user"))
-                        .update({
-                            inform: firebase.firestore.FieldValue.delete(),
-                        });
+                    $.ajax({
+                        url: url + "informed",
+                        type: "POST",
+                        contentType: "application/json",
+                        // dataType: "json",
+                        data: {
+                            id: sessionStorage.getItem("user"),
+                        },
+                    });
+                    // db.collection("users")
+                    //     .doc(sessionStorage.getItem("user"))
+                    //     .update({
+                    //         inform: firebase.firestore.FieldValue.delete(),
+                    //     });
                     alert("You have a new match!");
                 }
-            });
+            },
+        });
+        // db.collection("users")
+        //     .doc(sessionStorage.getItem("user"))
+        //     .get()
+        //     .then((doc) => {
+        //         user_info = doc.data();
+
+        //     });
     }
 });
 
@@ -330,12 +375,18 @@ $("#match_button").click(function () {
 
 //add match's id to user's passes
 $("#pass_button").click(function () {
-    db.collection("users")
-        .doc(sessionStorage.getItem("user"))
-        .update({
-            passes: firebase.firestore.FieldValue.arrayUnion(match_info.id),
-        })
-        .then(() => location.reload());
+    $.ajax({
+        url: url + "pass",
+        type: "POST",
+        contentType: "application/json",
+        data: {
+            id: sessionStorage.getItem("user"),
+            match_id: match_info.id,
+        },
+        success: function (data) {
+            location.reload();
+        },
+    });
 });
 
 $(".tab").click(function () {
@@ -348,33 +399,32 @@ $("#logout").click(function () {
 });
 
 $("#login_form").submit(function () {
-    db.collection("users")
-        .where("email", "==", $("#login_email").val())
-        .where("password", "==", $("#login_password").val())
-        .get()
-        .then(function (snapshot) {
-            if (snapshot.empty) {
-                $("#modal_message").text("Account doesn't exist!");
-                $("#popup").modal("open");
-                throw Error("account doesn't exist!");
-            } else {
-                snapshot.docs.every(function (doc) {
-                    sessionStorage.setItem("user", doc.id);
-                    sessionStorage.setItem("tab", "account");
-                    alert("Login successful!");
-                    location.reload();
-                    //we can assume every user has a unique email and password combination
-                });
-            }
-        })
-        .catch(function (error) {
-            console.log("Error getting documents: ", error);
-        });
+    $.ajax({
+        url: url + "login",
+        type: "POST",
+        contentType: "application/json",
+        // dataType: "json",
+        data: {
+            email: $("#login_email").val(),
+            password: $("#login_password").val(),
+        },
+        error: function (response) {
+            $("#modal_message").text("Account doesn't exist!");
+            $("#popup").modal("open");
+        },
+        success: function (data) {
+            // console.log(data);
+            sessionStorage.setItem("user", data.id);
+            sessionStorage.setItem("tab", "account");
+            alert("Login successful!");
+            location.reload();
+        },
+    });
     return false; //prevent the page from reloading
 });
 
-async function update_account(ref) {
-    console.log(ref);
+function update_account(action) {
+    // console.log(ref);
     //parse technologies checkboxes
     let technologies = [];
     $("#technologies")
@@ -419,8 +469,12 @@ async function update_account(ref) {
     ) {
         keywords.push(M.Chips.getInstance($("#keywords")).chipsData[i].tag);
     }
-    await ref.set(
-        {
+    $.ajax({
+        url: url + "update",
+        type: "POST",
+        contentType: "application/json",
+        data: {
+            id: sessionStorage.getItem("user"),
             name: $("#name").val(),
             email: $("#profile_email").val(),
             password: $("#profile_password").val(),
@@ -430,8 +484,11 @@ async function update_account(ref) {
             description: $("#profile_description").val(),
             keywords: keywords,
         },
-        { merge: true }
-    );
+        success: function (data) {
+            action();
+            location.reload();
+        },
+    });
 }
 
 $("#profile_form").submit(function () {
@@ -447,7 +504,6 @@ $("#profile_form").submit(function () {
     }
     if (sessionStorage.getItem("user") === null) {
         //register new account
-        let ref;
         db.collection("users")
             .where("email", "==", $("#profile_email").val())
             .get()
@@ -456,26 +512,36 @@ $("#profile_form").submit(function () {
                     $("#modal_message").text("Account already exists!");
                     $("#popup").modal("open");
                     throw Error("account already exists!"); //stops the following promise to be executed
+                } else {
+                    const ref = db.collection("users").doc();
+                    sessionStorage.setItem("user", ref.id);
+                    update_account(function () {
+                        sessionStorage.setItem("tab", "account");
+                        alert("Registration successful!");
+                    });
                 }
-            })
-            .then(() => {
-                ref = db.collection("users").doc();
-                return update_account(ref); //because the function returns a promise
-            })
-            .then(() => {
-                sessionStorage.setItem("user", ref.id);
-                sessionStorage.setItem("tab", "account");
-                alert("Registration successful!");
-                location.reload();
             });
+        // .then(() => {
+        //     ref = db.collection("users").doc();
+        //     return update_account(ref); //because the function returns a promise
+        // })
+        // .then(() => {
+        //     sessionStorage.setItem("user", ref.id);
+        //     sessionStorage.setItem("tab", "account");
+        //     alert("Registration successful!");
+        //     location.reload();
+        // });
     } else {
         //update account information
-        update_account(
-            db.collection("users").doc(sessionStorage.getItem("user"))
-        ).then(() => {
+        update_account(function () {
             console.log("updated");
-            location.reload();
         });
+        // update_account(
+        //     db.collection("users").doc(sessionStorage.getItem("user"))
+        // ).then(() => {
+        //     console.log("updated");
+        //     location.reload();
+        // });
     }
     return false; //prevent the page from reloading before promise is resolved
 });
