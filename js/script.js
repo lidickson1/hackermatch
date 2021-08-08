@@ -22,6 +22,7 @@ $(document).ready(function () {
     $("#popup").modal({ dismissible: false });
     $("#contact_modal").modal();
     $(".dropdown-trigger").dropdown();
+    $(".tooltipped").tooltip();
 
     //back end initialization
     // Your web app's Firebase configuration
@@ -52,7 +53,7 @@ $(document).ready(function () {
         $(".restricted_tab").addClass("disabled");
         $("#keywords").chips({
             placeholder: "Enter a keyword",
-            secondaryPlaceholder: "Press enter",
+            // secondaryPlaceholder: "Press enter",
         });
     } else {
         $("#profile_title").text("Account Details");
@@ -104,8 +105,8 @@ $(document).ready(function () {
                     keywords.push({ tag: user_info.keywords[i] });
                 }
                 $("#keywords").chips({
-                    placeholder: "Enter a keyword",
-                    secondaryPlaceholder: "Press enter",
+                    // placeholder: "Enter a keyword",
+                    // secondaryPlaceholder: "Press enter",
                     data: keywords,
                 });
 
@@ -132,75 +133,75 @@ $(document).ready(function () {
                     }
                 });
 
-                get_matches().then(() => {
-                    console.log(matches);
-                    //load matches
-                    for (let i = 0; i < matches.length; i++) {
-                        let chips = "";
-                        for (
-                            let j = 0;
-                            j < matches[i].technologies.length;
-                            j++
-                        ) {
-                            chips +=
-                                '<div class="chip">' +
-                                matches[i].technologies[j] +
-                                "</div>";
-                        }
-                        $("#matches_list").append(
-                            '<div class="row"><div class="card horizontal"><div class="card-stacked"><div class="card-content"><h4>' +
-                                matches[i].name +
-                                "</h4>" +
-                                chips +
-                                '</div><div class="card-action"><div class="row"><div class="col l6"><a href="#" class="contact_match" data-index=' +
-                                i +
-                                '>Contact</a></div><div class="col l6"><a href="#" class="unmatch_button" data-index=' +
-                                i +
-                                ">Unmatch</a></div></div></div></div></div></div>"
-                        );
-                    }
-
-                    $(".contact_match").click(function () {
-                        let index = $(this).attr("data-index");
-                        for (
-                            let i = 0;
-                            i < matches[index].contacts.length;
-                            i++
-                        ) {
-                            $("#match_contact_list").append(
-                                construct_contact(
-                                    matches[index].contacts[i].type,
-                                    matches[index].contacts[i].contact,
-                                    false
-                                )
+                $.ajax({
+                    url: url + "matches",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: {
+                        id: sessionStorage.getItem("user"),
+                    },
+                    success: function (data) {
+                        matches = data.matches;
+                        for (let i = 0; i < matches.length; i++) {
+                            let chips = "";
+                            for (const technology of matches[i].technologies) {
+                                chips +=
+                                    '<div class="chip">' +
+                                    technology +
+                                    "</div>";
+                            }
+                            $("#matches_list").append(
+                                '<div class="row"><div class="card horizontal"><div class="card-stacked"><div class="card-content"><h4>' +
+                                    matches[i].name +
+                                    "</h4>" +
+                                    chips +
+                                    '</div><div class="card-action"><div class="row"><div class="col l6"><a href="#" class="contact_match" data-index=' +
+                                    i +
+                                    '>Contact</a></div><div class="col l6"><a href="#" class="unmatch_button" data-index=' +
+                                    i +
+                                    ">Unmatch</a></div></div></div></div></div></div>"
                             );
                         }
-                        $("#contact_modal").modal("open");
-                    });
 
-                    $(".unmatch_button").click(function () {
-                        let index = $(this).attr("data-index");
-                        // console.log(matches[index]);
-                        $.ajax({
-                            url: url + "unmatch",
-                            type: "POST",
-                            contentType: "application/json",
-                            // dataType: "json",
-                            data: {
-                                id: sessionStorage.getItem("user"),
-                                match_id: matches[index].id,
-                            },
-                            // error: function (response) {
-                            //     console.log(response);
-                            //     //TODO
-                            //     // $("#modal_message").text("Account doesn't exist!");
-                            //     // $("#popup").modal("open");
-                            // },
-                            success: function (data) {
-                                location.reload();
-                            },
+                        $(".contact_match").click(function () {
+                            let index = $(this).attr("data-index");
+                            for (const contact of matches[index].contacts) {
+                                $("#match_contact_list").empty();
+                                $("#match_contact_list").append(
+                                    construct_contact(
+                                        contact.type,
+                                        contact.contact,
+                                        false
+                                    )
+                                );
+                            }
+                            $("#contact_modal").modal("open");
                         });
-                    });
+
+                        $(".unmatch_button").click(function () {
+                            let index = $(this).attr("data-index");
+                            // console.log(matches[index]);
+                            $.ajax({
+                                url: url + "unmatch",
+                                type: "POST",
+                                contentType: "application/json",
+                                // dataType: "json",
+                                data: {
+                                    id: sessionStorage.getItem("user"),
+                                    match_id: matches[index].id,
+                                },
+                                // error: function (response) {
+                                //     console.log(response);
+                                //     //TODO
+                                //     // $("#modal_message").text("Account doesn't exist!");
+                                //     // $("#popup").modal("open");
+                                // },
+                                success: function (data) {
+                                    location.reload();
+                                },
+                            });
+                        });
+                    },
                 });
 
                 //check new matches
@@ -232,30 +233,6 @@ $(document).ready(function () {
         //     });
     }
 });
-
-async function get_matches() {
-    let snapshot = await db.collection("users").get();
-    let user_id = sessionStorage.getItem("user");
-    for (let i = 0; i < snapshot.docs.length; i++) {
-        let match = snapshot.docs[i].data();
-        match.id = snapshot.docs[i].id; //to save space
-        //console.log(match.id);
-        if (!match.hasOwnProperty("name")) {
-            //console.log("invalid data");
-            continue;
-        }
-        //we check for matches here
-        if (
-            match.hasOwnProperty("matches") &&
-            match.matches.includes(user_id) &&
-            user_info.hasOwnProperty("matches") &&
-            user_info.matches.includes(match.id)
-        ) {
-            matches.push(match);
-        }
-    }
-    return;
-}
 
 async function get_matching() {
     let snapshot = await db.collection("users").get();
@@ -343,34 +320,22 @@ async function get_matching() {
 
 //add match's id to user's matches
 $("#match_button").click(function () {
-    let user_id = sessionStorage.getItem("user");
-    db.collection("users")
-        .doc(user_id)
-        .update({
-            matches: firebase.firestore.FieldValue.arrayUnion(match_info.id),
-        })
-        .then(() => {
-            //getting the match's information again because it might have changed while the user was deciding
-            let ref = db.collection("users").doc(match_info.id);
-            ref.get()
-                .then(function (doc) {
-                    if (
-                        doc.data().hasOwnProperty("matches") &&
-                        doc.data().matches.includes(user_id)
-                    ) {
-                        //inform other person that we have matched
-                        ref.set(
-                            {
-                                inform: true,
-                            },
-                            { merge: true }
-                        );
-                        sessionStorage.setItem("tab", "matches");
-                        alert("Its a match!");
-                    }
-                })
-                .then(() => location.reload());
-        });
+    $.ajax({
+        url: url + "match",
+        type: "POST",
+        contentType: "application/json",
+        data: {
+            id: sessionStorage.getItem("user"),
+            match_id: match_info.id,
+        },
+        success: function (data) {
+            if (data.inform) {
+                sessionStorage.setItem("tab", "matches");
+                alert("Its a match!");
+            }
+            location.reload();
+        },
+    });
 });
 
 //add match's id to user's passes
@@ -504,44 +469,30 @@ $("#profile_form").submit(function () {
     }
     if (sessionStorage.getItem("user") === null) {
         //register new account
-        db.collection("users")
-            .where("email", "==", $("#profile_email").val())
-            .get()
-            .then(function (snapshot) {
-                if (!snapshot.empty) {
-                    $("#modal_message").text("Account already exists!");
-                    $("#popup").modal("open");
-                    throw Error("account already exists!"); //stops the following promise to be executed
-                } else {
-                    const ref = db.collection("users").doc();
-                    sessionStorage.setItem("user", ref.id);
-                    update_account(function () {
-                        sessionStorage.setItem("tab", "account");
-                        alert("Registration successful!");
-                    });
-                }
-            });
-        // .then(() => {
-        //     ref = db.collection("users").doc();
-        //     return update_account(ref); //because the function returns a promise
-        // })
-        // .then(() => {
-        //     sessionStorage.setItem("user", ref.id);
-        //     sessionStorage.setItem("tab", "account");
-        //     alert("Registration successful!");
-        //     location.reload();
-        // });
+        $.ajax({
+            url: url + "can-register",
+            type: "POST",
+            contentType: "application/json",
+            data: {
+                email: $("#profile_email").val(),
+            },
+            error: function (data) {
+                $("#modal_message").text("Account already exists!");
+                $("#popup").modal("open");
+            },
+            success: function (data) {
+                sessionStorage.setItem("user", data);
+                update_account(function () {
+                    sessionStorage.setItem("tab", "account");
+                    alert("Registration successful!");
+                });
+            },
+        });
     } else {
         //update account information
         update_account(function () {
             console.log("updated");
         });
-        // update_account(
-        //     db.collection("users").doc(sessionStorage.getItem("user"))
-        // ).then(() => {
-        //     console.log("updated");
-        //     location.reload();
-        // });
     }
     return false; //prevent the page from reloading before promise is resolved
 });

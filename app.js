@@ -140,6 +140,8 @@ app.post("/pass", function (request, response) {
                     request.body.match_id
                 ),
             });
+            //note that when we pass here, the other person (who initiated the match) will still have this person (the passer) in their matches array
+            //thus, if for some reason the passer unpasses, they can decide to match
             response
                 .status(200)
                 .send(request.body.id + " passed " + request.body.match_id);
@@ -177,6 +179,87 @@ app.post("/update", function (request, response) {
     //     { merge: true }
     // );
     response.status(200).send(request.body.id + " updated");
+});
+
+app.post("/can-register", function (request, response) {
+    db.collection("users")
+        .where("email", "==", request.body.email)
+        .get()
+        .then(function (snapshot) {
+            if (!snapshot.empty) {
+                response.status(401).send("Account already exists!");
+            } else {
+                response.status(200).send(db.collection("users").doc().id);
+            }
+        });
+});
+
+app.post("/match", function (request, response) {
+    get_document(request.body.id).then(([reference, document]) => {
+        if (reference === undefined) {
+            response.status(401).send("Document with given id doesn't exist!");
+        } else {
+            reference.update({
+                matches: firebase.firestore.FieldValue.arrayUnion(
+                    request.body.match_id
+                ),
+            });
+            get_document(request.body.match_id).then(
+                ([match, match_document]) => {
+                    //only if the other person has chosen to match, do we then inform
+                    if (
+                        match_document.hasOwnProperty("matches") &&
+                        match_document.matches.includes(request.body.id)
+                    ) {
+                        match.set(
+                            {
+                                inform: true,
+                            },
+                            { merge: true }
+                        );
+                        response.status(200).json({ inform: true });
+                    } else {
+                        response.status(200).json({ inform: false });
+                    }
+                }
+            );
+            // response
+            //     .status(200)
+            //     .send(
+            //         request.body.id + " matched with " + request.body.match_id
+            //     );
+        }
+    });
+});
+
+app.post("/matches", function (request, response) {
+    get_document(request.body.id).then(([reference, document]) => {
+        if (reference === undefined) {
+            response.status(401).send("Document with given id doesn't exist!");
+        } else if (
+            !document.hasOwnProperty("matches") ||
+            document.matches.length === 0
+        ) {
+            response.status(200).json({ matches: [] });
+        } else {
+            db.collection("users")
+                .where(
+                    firebase.firestore.FieldPath.documentId(),
+                    "in",
+                    document.matches
+                )
+                .get()
+                .then((snapshot) =>
+                    response.status(200).json({
+                        matches: snapshot.docs.map((element) => {
+                            const match_document = element.data();
+                            match_document.id = element.id;
+                            return match_document;
+                        }),
+                    })
+                );
+        }
+    });
 });
 
 app.listen(app.get("port"));
