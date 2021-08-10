@@ -1,8 +1,8 @@
-let db;
 let user_info;
 let match_info;
 let matches = [];
-const url = "http://localhost:3000/";
+const url = "http://hackermatch-lidickson1.herokuapp.com/";
+// const url = "http://localhost:3000/";
 
 //this functions stringifies the json for us automatically
 //https://stackoverflow.com/a/39172380/15974102
@@ -24,27 +24,20 @@ $(document).ready(function () {
     $(".dropdown-trigger").dropdown();
     $(".tooltipped").tooltip();
 
-    //back end initialization
-    // Your web app's Firebase configuration
-    let firebaseConfig = {
-        apiKey: "AIzaSyBvcNp7bBLjKYYOlwpOkru99K2_876l4Ms",
-        authDomain: "hackermatch-5fb6b.firebaseapp.com",
-        databaseURL: "https://hackermatch-5fb6b.firebaseio.com",
-        projectId: "hackermatch-5fb6b",
-        storageBucket: "hackermatch-5fb6b.appspot.com",
-        messagingSenderId: "34253622534",
-        appId: "1:34253622534:web:c750f99b5c32ccce43e287",
-        measurementId: "G-RZNKLP745R",
-    };
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    firebase.analytics();
-    db = firebase.firestore();
-
     if (sessionStorage.getItem("tab") != null) {
         $(".tabs").tabs("select", sessionStorage.getItem("tab"));
     }
 
+    //ping heroku so that it starts waking up, while the user is registering
+    $.ajax({
+        url: url + "test",
+        type: "POST",
+        contentType: "application/json",
+        data: {},
+        success: function (data) {
+            console.log(data);
+        },
+    });
     if (sessionStorage.getItem("user") === null) {
         $("#login").show();
         $("#profile_title").text("Register Account");
@@ -113,24 +106,29 @@ $(document).ready(function () {
                 M.updateTextFields();
 
                 //get matching
-
-                get_matching().then((match) => {
-                    if (match != null) {
-                        match_info = match;
-                        console.log(match);
-                        $("#match_name").text(match.name);
-                        $("#match_description").text(match.description);
-                        for (let i = 0; i < match.technologies.length; i++) {
-                            $("#match_technologies").append(
-                                '<div class="chip">' +
-                                    match.technologies[i] +
-                                    "</div>"
-                            );
+                $.ajax({
+                    url: url + "matching",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: {
+                        id: sessionStorage.getItem("user"),
+                    },
+                    success: function (match) {
+                        if (match != null) {
+                            match_info = match;
+                            console.log(match);
+                            $("#match_name").text(match.name);
+                            $("#match_description").text(match.description);
+                            for (const technology of match.technologies) {
+                                $("#match_technologies").append(
+                                    '<div class="chip">' + technology + "</div>"
+                                );
+                            }
+                        } else {
+                            $("#match_name").text("No Matches found!");
+                            $("#match_description").text("RIP I guess!");
                         }
-                    } else {
-                        $("#match_name").text("No Matches found!");
-                        $("#match_description").text("RIP I guess!");
-                    }
+                    },
                 });
 
                 $.ajax({
@@ -233,90 +231,6 @@ $(document).ready(function () {
         //     });
     }
 });
-
-async function get_matching() {
-    let snapshot = await db.collection("users").get();
-    let match;
-    let user_id = sessionStorage.getItem("user");
-    let foundMatch = false;
-    snapshot.docs.every(function (doc) {
-        match = doc.data();
-        match.id = doc.id; //to save space
-        console.log("Attempting to match " + match.id);
-        if (!match.hasOwnProperty("name")) {
-            console.log("invalid data");
-            return true;
-        }
-
-        //they cannot be the same person
-        if (match.id === user_id) {
-            console.log("same person");
-            return true;
-        }
-
-        //either of them cannot have passed the other already
-        if (
-            (match.hasOwnProperty("passes") &&
-                match.passes.includes(user_id)) ||
-            (user_info.hasOwnProperty("passes") &&
-                user_info.passes.includes(match.id))
-        ) {
-            console.log("passed");
-            return true;
-        }
-
-        //they cannot be a match already
-        if (
-            user_info.hasOwnProperty("matches") &&
-            user_info.matches.includes(match.id)
-        ) {
-            console.log("matched already");
-            return true;
-        }
-
-        //keywords score
-        if (!match.hasOwnProperty("keywords")) {
-            console.log("doesn't even have keywords");
-            return true;
-        }
-        let intersection = user_info.keywords.filter((value) =>
-            match.keywords.includes(value)
-        );
-        if (intersection.length < 2) {
-            console.log("not enough keyword score");
-            return true;
-        }
-        // //0 is none, 1 is all keywords were matched
-        // let keywordScore =
-        //     (intersection.length * 2) /
-        //     parseFloat(user_info.keywords.length + match.keywords.length);
-        // console.log("Keyword score: " + keywordScore);
-        // if (keywordScore < 2 / 3.0) {
-        //     console.log("not enough keyword score");
-        //     return true;
-        // }
-
-        //tech score
-        let union = [
-            ...new Set([...user_info.technologies, ...match.technologies]),
-        ];
-        let techScore = union.length / 6.0;
-        console.log("tech score: " + techScore);
-        if (techScore < 4 / 6.0) {
-            console.log("not enough tech score");
-            return true;
-        }
-
-        foundMatch = true;
-        return false;
-    });
-
-    if (foundMatch) {
-        return match;
-    } else {
-        return null;
-    }
-}
 
 //add match's id to user's matches
 $("#match_button").click(function () {
@@ -564,7 +478,6 @@ $("#add_contact").click(function () {
     $("#contact_input").val("");
 });
 
-//TODO move backend code to backend, use express (see canmypeteat for template)
 //TODO if you logout, the account details will remain in the register section
 //TODO show all profile details in matches tab as well
 //TODO ability to add pictures (multiple if possible)

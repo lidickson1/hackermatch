@@ -262,6 +262,87 @@ app.post("/matches", function (request, response) {
     });
 });
 
+app.post("/matching", function (request, response) {
+    get_document(request.body.id).then(([reference, document]) => {
+        if (reference === undefined) {
+            response.status(401).send("Document with given id doesn't exist!");
+        } else {
+            db.collection("users")
+                .where(
+                    firebase.firestore.FieldPath.documentId(),
+                    "!=",
+                    request.body.id
+                )
+                .get()
+                .then(function (snapshot) {
+                    for (const doc of snapshot.docs) {
+                        const match = doc.data();
+                        match.id = doc.id;
+                        //either of them cannot have passed the other already
+                        if (
+                            (match.hasOwnProperty("passes") &&
+                                match.passes.includes(request.body.id)) ||
+                            (document.hasOwnProperty("passes") &&
+                                document.passes.includes(match.id))
+                        ) {
+                            console.log("passed");
+                            continue;
+                        }
+
+                        //they cannot be a match already
+                        if (
+                            document.hasOwnProperty("matches") &&
+                            document.matches.includes(match.id)
+                        ) {
+                            console.log("matched already");
+                            continue;
+                        }
+
+                        //keywords score
+                        if (!match.hasOwnProperty("keywords")) {
+                            console.log("doesn't even have keywords");
+                            continue;
+                        }
+                        let intersection = document.keywords.filter((value) =>
+                            match.keywords.includes(value)
+                        );
+                        if (intersection.length < 2) {
+                            console.log("not enough keyword score");
+                            continue;
+                        }
+                        // //0 is none, 1 is all keywords were matched
+                        // let keywordScore =
+                        //     (intersection.length * 2) /
+                        //     parseFloat(user_info.keywords.length + match.keywords.length);
+                        // console.log("Keyword score: " + keywordScore);
+                        // if (keywordScore < 2 / 3.0) {
+                        //     console.log("not enough keyword score");
+                        //     return true;
+                        // }
+
+                        //tech score
+                        let union = [
+                            ...new Set([
+                                ...document.technologies,
+                                ...match.technologies,
+                            ]),
+                        ];
+                        let techScore = union.length / 6.0;
+                        console.log("tech score: " + techScore);
+                        if (techScore < 4 / 6.0) {
+                            console.log("not enough tech score");
+                            continue;
+                        }
+
+                        response.status(200).json(match);
+                        return;
+                    }
+                    response.status(200).json(null);
+                });
+        }
+    });
+});
+
 app.listen(app.get("port"));
 
 async function get_document(id) {
